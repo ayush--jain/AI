@@ -15,26 +15,22 @@ class LearningAgent(Agent):
         
         # TODO: Initialize any additional variables here
         self.action = None
+        self.next_waypoint_new = None
+        self.next_state = None
 
         #initialize qtable to default value (0 for int)
         from collections import defaultdict
-        self.qtable = defaultdict(int)  #Initialize Q(s, a)
+        self.qtable = defaultdict(lambda:2)  #Initialize Q(s, a)
 
     #new trial
     def reset(self, destination=None):
         self.planner.route_to(destination)
         # TODO: Prepare for a new trip; reset any variables here, if required
         self.action = None  #NOTE: check if this should be randomized
+        self.state = None
+        self.next_state = None
 
-        # Gather inputs
-        self.next_waypoint = self.planner.next_waypoint()  # from route planner, also displayed by simulator
-        inputs = self.env.sense(self)  #check if we can move forward i.e. green light and  no oncoming traffic - gets dic tnot a boolean
-        deadline = self.env.get_deadline(self) #gets deadline from Environment which is (dist b/w start-dest.) *5
-
-        # TODO: Update state
-        self.state = (('light',inputs['light']),('oncoming', inputs['oncoming']), ('left', inputs['left']), ('right', inputs['right']), self.next_waypoint, deadline)
-
-
+        
     # helper func for updating q table
     def argmax(self, current_state):
         '''selects the best action from the state
@@ -54,8 +50,14 @@ class LearningAgent(Agent):
         inputs = self.env.sense(self)  #check if we can move forward i.e. green light and  no oncoming traffic - gets dic tnot a boolean
         deadline = self.env.get_deadline(self) #gets deadline from Environment which is (dist b/w start-dest.) *5
 
+        #convert deadline to binary value to reduce state dimensions
+        binary_deadline = 0
+        if deadline <= 1:
+            binary_deadline = 1
+
         # TODO: Update state
-        self.next_state = (('light',inputs['light']),('oncoming', inputs['oncoming']), ('left', inputs['left']), ('right', inputs['right']), self.next_waypoint, deadline)
+        self.state = (('light',inputs['light']),('oncoming', inputs['oncoming']), ('left', inputs['left']), ('right', inputs['right']), 
+                        self.next_waypoint, binary_deadline)
 
         # TODO: Select action according to your policy
         self.action = self.argmax(self.state)
@@ -64,16 +66,24 @@ class LearningAgent(Agent):
         reward = self.env.act(self, self.action)
 
         # TODO: Learn policy based on state, action, reward
-        alpha = 0.5
-        gamma = 0.5       
+        alpha = 0.1  #how much data is being overriden in each cycle- learning rate
+        gamma = 0.1  #how much future reward is valued(closer to 0 means more immediate reward is considered)- discount factor    
 
+        #get next set of state action paur
+        self.next_waypoint_new = self.planner.next_waypoint()
+        inputs_new = self.env.sense(self)
+        deadline_new = deadline - 1
+        binary_deadline = 0
+        if deadline <= 1:
+            binary_deadline = 1
 
+        self.next_state = (('light',inputs_new['light']),('oncoming', inputs_new['oncoming']), ('left', inputs_new['left']), ('right', inputs_new['right']), 
+                            self.next_waypoint_new, binary_deadline)
         next_action = self.argmax(self.next_state)
 
         #Q (s, a) <-- Q(s, a) + alpha [r + gamma* max(a')Q(s', a') - Q(s, a)]
         self.qtable[(self.state,self.action)] += alpha * (reward + gamma* self.qtable[(self.next_state, next_action)] - self.qtable[(self.state, self.action)] )
 
-        self.state = self.next_state
         
         print "LearningAgent.update(): deadline = {}, inputs = {}, action = {}, reward = {}".format(deadline, inputs, self.action, reward)  # [debug]
 
