@@ -17,6 +17,8 @@ class LearningAgent(Agent):
         self.action = None
         self.next_waypoint_new = None
         self.next_state = None
+        self.e = 0.1  #initialize epsilon for epsilon greedy
+        self.temp = 1.0
 
         #initialize qtable to default value (0 for int)
         from collections import defaultdict
@@ -45,25 +47,37 @@ class LearningAgent(Agent):
 
     #update at every step till we reach destination or deadline
     def update(self, t): #t is the no of step at which we are
+        ###########################
         # Gather inputs
         self.next_waypoint = self.planner.next_waypoint()  # from route planner, also displayed by simulator
         inputs = self.env.sense(self)  #check if we can move forward i.e. green light and  no oncoming traffic - gets dic tnot a boolean
         deadline = self.env.get_deadline(self) #gets deadline from Environment which is (dist b/w start-dest.) *5
-
-        #convert deadline to binary value to reduce state dimensions
-        binary_deadline = 0
-        if deadline <= 1:
-            binary_deadline = 1
-
-        # TODO: Update state
+        ############################
+        
+        # Update state
         self.state = (('light',inputs['light']),('oncoming', inputs['oncoming']), ('left', inputs['left']), ('right', inputs['right']), 
-                        self.next_waypoint, binary_deadline)
+                        self.next_waypoint)
 
-        # TODO: Select action according to your policy
-        self.action = self.argmax(self.state)
+        ############################
+        # Select action according to your policy
+        
+        #update epsilon
+        self.e = 1.0/self.temp
+        self.temp += 0.1
+
+        #epsilon greedy
+        #if epsilon is low (first 50 steps or so) 
+        if self.e > 0.016:
+            self.action = random.choice(Environment.valid_actions)
+
+        else:
+            self.action = self.argmax(self.state)
+        ##############################
 
         # Execute action and get reward
         reward = self.env.act(self, self.action)
+
+        ##############################
 
         # TODO: Learn policy based on state, action, reward
         alpha = 0.1  #how much data is being overriden in each cycle- learning rate
@@ -72,13 +86,9 @@ class LearningAgent(Agent):
         #get next set of state action paur
         self.next_waypoint_new = self.planner.next_waypoint()
         inputs_new = self.env.sense(self)
-        deadline_new = deadline - 1
-        binary_deadline = 0
-        if deadline <= 1:
-            binary_deadline = 1
 
         self.next_state = (('light',inputs_new['light']),('oncoming', inputs_new['oncoming']), ('left', inputs_new['left']), ('right', inputs_new['right']), 
-                            self.next_waypoint_new, binary_deadline)
+                            self.next_waypoint_new)
         next_action = self.argmax(self.next_state)
 
         #Q (s, a) <-- Q(s, a) + alpha [r + gamma* max(a')Q(s', a') - Q(s, a)]
