@@ -13,7 +13,7 @@ class LearningAgent(Agent):
 
         self.planner = RoutePlanner(self.env, self)  # simple route planner to get next_waypoint
         
-        # TODO: Initialize any additional variables here
+        # Initialize any additional variables here
         self.action = None
         self.next_waypoint_new = None
         self.next_state = None
@@ -27,7 +27,7 @@ class LearningAgent(Agent):
     #new trial
     def reset(self, destination=None):
         self.planner.route_to(destination)
-        # TODO: Prepare for a new trip; reset any variables here, if required
+        # Prepare for a new trip; reset any variables here, if required
         self.action = None  #NOTE: check if this should be randomized
         self.state = None
         self.next_state = None
@@ -79,7 +79,7 @@ class LearningAgent(Agent):
 
         ##############################
 
-        # TODO: Learn policy based on state, action, reward
+        # Learn policy based on state, action, reward
         alpha = 0.1  #how much data is being overriden in each cycle- learning rate
         gamma = 0.1  #how much future reward is valued(closer to 0 means more immediate reward is considered)- discount factor    
 
