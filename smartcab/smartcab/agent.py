@@ -13,7 +13,7 @@ class LearningAgent(Agent):
 
         self.planner = RoutePlanner(self.env, self)  # simple route planner to get next_waypoint
         
-        # Initialize any additional variables here
+        # TODO: Initialize any additional variables here
         self.action = None
         self.next_waypoint_new = None
         self.next_state = None
@@ -27,7 +27,7 @@ class LearningAgent(Agent):
     #new trial
     def reset(self, destination=None):
         self.planner.route_to(destination)
-        # Prepare for a new trip; reset any variables here, if required
+        # TODO: Prepare for a new trip; reset any variables here, if required
         self.action = None  #NOTE: check if this should be randomized
         self.state = None
         self.next_state = None
@@ -67,7 +67,7 @@ class LearningAgent(Agent):
 
         #epsilon greedy
         #if epsilon is low (first 50 steps or so) 
-        if self.e > 0.016:
+        if self.e > 0.016 or random.random() < self.e: # for later steps select with epsilon probability (if a random no. b/w 0 & 1 trumps epsilon)
             self.action = random.choice(Environment.valid_actions)
 
         else:
@@ -79,7 +79,7 @@ class LearningAgent(Agent):
 
         ##############################
 
-        # Learn policy based on state, action, reward
+        # TODO: Learn policy based on state, action, reward
         alpha = 0.1  #how much data is being overriden in each cycle- learning rate
         gamma = 0.1  #how much future reward is valued(closer to 0 means more immediate reward is considered)- discount factor    
 
